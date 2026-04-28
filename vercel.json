@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/(.*)",
-      "destination": "URL_WEB_APP_APPS_SCRIPT_ANDA"
+      "destination": "URL_WEB_APP_GOOGLE_APPS_SCRIPT_ANDA"
     }
   ]
 }
