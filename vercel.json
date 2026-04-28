@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "URL_WEB_APP_APPS_SCRIPT_ANDA"
+    }
+  ]
+}
