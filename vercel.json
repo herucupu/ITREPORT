@@ -2,7 +2,7 @@
   "redirects": [
     {
       "source": "/",
-      "destination": "URL_WEB_APP_APPS_SCRIPT_ANDA",
+      "destination": "https://script.google.com/macros/s/AKfycbxPuGAysw5wql4v-5zEBStNDJoV8pMXsGQQCAvwkDLGKd4V1geGpxMTP3aa8Pg091_IZQ/exec",
       "permanent": true
     }
   ]
