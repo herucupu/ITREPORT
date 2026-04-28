@@ -1,8 +1,9 @@
 {
-  "rewrites": [
+  "redirects": [
     {
-      "source": "/(.*)",
-      "destination": "URL_WEB_APP_GOOGLE_APPS_SCRIPT_ANDA"
+      "source": "/",
+      "destination": "URL_WEB_APP_APPS_SCRIPT_ANDA",
+      "permanent": true
     }
   ]
 }
