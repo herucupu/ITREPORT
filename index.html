@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@3.5.0/dist/full.css" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+      [x-cloak] { display: none !important; }
+      .glass-card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen" x-data="app()">
+
+    <template x-if="!isLoggedIn">
+        <div class="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-600 to-indigo-800">
+            <div class="card w-96 bg-base-100 shadow-2xl p-6">
+                <div class="text-center mb-6">
+                    <i class="fa-solid fa-shield-halved text-5xl text-blue-600 mb-2"></i>
+                    <h2 class="text-2xl font-bold">IT Report Login</h2>
+                </div>
+                <input type="password" placeholder="Password Sistem" class="input input-bordered w-full" x-model="passInput" @keyup.enter="login" />
+                <button class="btn btn-primary mt-4 w-full" @click="login" :disabled="loading">
+                    <span x-show="loading" class="loading loading-spinner"></span> Masuk
+                </button>
+            </div>
+        </div>
+    </template>
+
+    <div x-show="isLoggedIn" x-cloak>
+        <div class="navbar bg-white shadow-md px-6 sticky top-0 z-50">
+            <div class="flex-1">
+                <span class="text-xl font-black text-blue-700 font-mono tracking-tighter">IT_REPORT.v2</span>
+            </div>
+            <div class="flex-none gap-2">
+                <div class="badge badge-info gap-2 p-3 font-bold">User IT</div>
+                <button class="btn btn-ghost btn-sm text-error" @click="isLoggedIn = false">Logout</button>
+            </div>
+        </div>
+
+        <div class="flex flex-col md:flex-row p-4 gap-6">
+            <ul class="menu bg-white w-full md:w-64 rounded-box shadow-sm gap-2 h-fit">
+                <li><a :class="menu === 'dash' && 'active bg-blue-600 text-white'" @click="menu = 'dash'"><i class="fa-solid fa-gauge"></i> Dashboard</a></li>
+                <li><a :class="menu === 'input' && 'active bg-blue-600 text-white'" @click="menu = 'input'"><i class="fa-solid fa-file-pen"></i> Input Harian</a></li>
+                <li><a :class="menu === 'history' && 'active bg-blue-600 text-white'" @click="menu = 'history'"><i class="fa-solid fa-box-archive"></i> Riwayat</a></li>
+                <li><a :class="menu === 'verif' && 'active bg-blue-600 text-white'" @click="menu = 'verif'"><i class="fa-solid fa-user-check"></i> Verifikasi</a></li>
+            </ul>
+
+            <div class="flex-1 space-y-6">
+                <div x-show="toast.show" class="alert shadow-lg mb-4" :class="toast.type == 'success' ? 'alert-success' : 'alert-error'">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <span x-text="toast.msg"></span>
+                </div>
+
+                <div x-show="menu === 'dash'" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div class="stat bg-white rounded-box shadow-sm cursor-pointer border-b-4 border-blue-500" @click="filterStatus = 'All'">
+                            <div class="stat-title">Total Laporan</div>
+                            <div class="stat-value text-blue-500" x-text="allData.length"></div>
+                        </div>
+                        <div class="stat bg-white rounded-box shadow-sm cursor-pointer border-b-4 border-success" @click="filterStatus = 'Done'">
+                            <div class="stat-title text-success">Selesai (Done)</div>
+                            <div class="stat-value text-success" x-text="allData.filter(i => i.Status === 'Done').length"></div>
+                        </div>
+                        <div class="stat bg-white rounded-box shadow-sm cursor-pointer border-b-4 border-warning" @click="filterStatus = 'In Progress'">
+                            <div class="stat-title text-warning">Proses</div>
+                            <div class="stat-value text-warning" x-text="allData.filter(i => i.Status === 'In Progress').length"></div>
+                        </div>
+                        <div class="stat bg-white rounded-box shadow-sm cursor-pointer border-b-4 border-error" @click="filterStatus = 'Pending'">
+                            <div class="stat-title text-error">Pending</div>
+                            <div class="stat-value text-error" x-text="allData.filter(i => i.Status === 'Pending').length"></div>
+                        </div>
+                    </div>
+
+                    <div class="card bg-white shadow-sm overflow-hidden">
+                        <div class="p-4 border-b font-bold bg-slate-50 flex justify-between items-center">
+                            <span>Visualisasi Data: <span x-text="filterStatus"></span></span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="table w-full">
+                                <thead><tr><th>Tanggal</th><th>Pekerjaan</th><th>Status</th><th>Validasi</th></tr></thead>
+                                <tbody>
+                                    <template x-for="item in filteredDash">
+                                        <tr class="hover">
+                                            <td x-text="item.Tanggal"></td>
+                                            <td x-text="item.Pekerjaan"></td>
+                                            <td><span class="badge" :class="getBadge(item.Status)" x-text="item.Status"></span></td>
+                                            <td><span class="badge badge-outline" x-text="item.Validasi"></span></td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div x-show="menu === 'input'" class="space-y-6">
+                    <div class="card bg-white shadow-sm">
+                        <div class="card-body">
+                            <h2 class="card-title text-blue-700">Form Laporan Aktivitas</h2>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="form-control">
+                                    <label class="label"><span class="label-text font-semibold">Tanggal</span></label>
+                                    <input type="date" class="input input-bordered w-full" x-model="form.tanggal" />
+                                </div>
+                                <div class="form-control">
+                                    <label class="label"><span class="label-text font-semibold">Status Awal</span></label>
+                                    <select class="select select-bordered" x-model="form.status">
+                                        <option value="In Progress">In Progress</option>
+                                        <option value="Done">Done</option>
+                                        <option value="Pending">Pending</option>
+                                    </select>
+                                </div>
+                                <div class="form-control md:col-span-2">
+                                    <label class="label"><span class="label-text font-semibold">Detail Pekerjaan</span></label>
+                                    <textarea class="textarea textarea-bordered h-24" placeholder="Jelaskan teknis pekerjaan..." x-model="form.detail"></textarea>
+                                </div>
+                                <div class="form-control">
+                                    <label class="label"><span class="label-text font-semibold">Keterangan/Dokumen</span></label>
+                                    <input type="text" placeholder="Link dokumen atau catatan singkat" class="input input-bordered" x-model="form.keterangan" />
+                                </div>
+                                <div class="form-control">
+                                    <label class="label"><span class="label-text font-semibold">Upload Link Foto</span></label>
+                                    <input type="text" placeholder="URL Foto bukti (Opsional)" class="input input-bordered" x-model="form.dokumen" />
+                                </div>
+                            </div>
+                            <button class="btn btn-primary mt-6 w-full md:w-fit px-12" @click="saveReport" :disabled="loading">
+                                <span x-show="loading" class="loading loading-spinner"></span> Simpan Laporan
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="card bg-white shadow-sm overflow-hidden">
+                        <div class="p-4 border-b font-bold bg-slate-50">Hasil Inputan Terbaru (Bisa Edit Status)</div>
+                        <div class="overflow-x-auto">
+                            <table class="table w-full">
+                                <thead class="bg-slate-100">
+                                    <tr><th>Tanggal</th><th>Pekerjaan</th><th class="w-48">Status Kerja</th><th>Aksi</th></tr>
+                                </thead>
+                                <tbody>
+                                    <template x-for="item in allData.slice(0, 10)">
+                                        <tr class="hover">
+                                            <td x-text="item.Tanggal"></td>
+                                            <td x-text="item.Pekerjaan"></td>
+                                            <td>
+                                                <select class="select select-ghost select-sm w-full font-bold text-blue-600" 
+                                                        x-model="item.Status" 
+                                                        @change="updateStatus(item.ID, item.Status)">
+                                                    <option value="Done">Done</option>
+                                                    <option value="In Progress">In Progress</option>
+                                                    <option value="Pending">Pending</option>
+                                                </select>
+                                            </td>
+                                            <td><span class="badge badge-sm badge-outline" x-text="item.Validasi"></span></td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div x-show="menu === 'history'" class="space-y-6">
+                    <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                        <h2 class="text-2xl font-bold">Arsip Laporan</h2>
+                        <div class="join">
+                            <input type="date" class="input input-bordered join-item" x-model="historyFilter" />
+                            <button class="btn join-item" @click="historyFilter = ''">Reset</button>
+                        </div>
+                    </div>
+                    <div class="card bg-white shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="table w-full">
+                                <thead><tr><th>Tanggal</th><th>Pekerjaan</th><th>Status</th><th>Atasan</th><th>Catatan Atasan</th></tr></thead>
+                                <tbody>
+                                    <template x-for="item in filteredHistory">
+                                        <tr class="hover">
+                                            <td x-text="item.Tanggal"></td>
+                                            <td x-text="item.Pekerjaan"></td>
+                                            <td><span class="badge" :class="getBadge(item.Status)" x-text="item.Status"></span></td>
+                                            <td><span class="badge" :class="item.Validasi == 'Approved' ? 'badge-success' : 'badge-error'" x-text="item.Validasi"></span></td>
+                                            <td x-text="item.Catatan_Atasan" class="italic text-slate-500"></td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div x-show="menu === 'verif'" class="space-y-6">
+                    <h2 class="text-2xl font-bold">Menu Persetujuan Atasan</h2>
+                    <template x-for="item in allData.filter(i => i.Validasi === 'Waiting')">
+                        <div class="card bg-white shadow-sm border-l-4 border-warning">
+                            <div class="card-body p-4">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <h3 class="font-bold text-lg" x-text="item.Pekerjaan"></h3>
+                                        <p class="text-sm text-slate-500" x-text="item.Tanggal + ' | Status Kerja: ' + item.Status"></p>
+                                    </div>
+                                    <span class="badge badge-warning">Waiting Action</span>
+                                </div>
+                                <div class="mt-4 flex flex-col md:flex-row gap-2">
+                                    <input type="text" placeholder="Berikan catatan atau feedback..." class="input input-bordered flex-1" x-model="item.tempCatatan" />
+                                    <div class="flex gap-2">
+                                        <button class="btn btn-success" @click="approve(item.ID, 'Approved', item.tempCatatan)">Approve</button>
+                                        <button class="btn btn-error" @click="approve(item.ID, 'Rejected', item.tempCatatan)">Reject</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                    <template x-if="allData.filter(i => i.Validasi === 'Waiting').length === 0">
+                        <div class="text-center py-12">
+                            <i class="fa-solid fa-circle-check text-5xl text-success mb-4 opacity-30"></i>
+                            <p class="text-slate-400">Semua laporan sudah diverifikasi.</p>
+                        </div>
+                    </template>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function app() {
+            return {
+                isLoggedIn: false,
+                passInput: '',
+                loading: false,
+                menu: 'dash',
+                allData: [],
+                filterStatus: 'All',
+                historyFilter: '',
+                form: { tanggal: new Date().toISOString().split('T')[0], detail: '', status: 'Done', keterangan: '', dokumen: '' },
+                toast: { show: false, msg: '', type: '' },
+
+                login() {
+                    this.loading = true;
+                    google.script.run.withSuccessHandler((res) => {
+                        this.loading = false;
+                        if(res) {
+                            this.isLoggedIn = true;
+                            this.refreshData();
+                        } else {
+                            this.showToast('Password Salah!', 'error');
+                        }
+                    }).checkLogin(this.passInput);
+                },
+
+                refreshData() {
+                    google.script.run.withSuccessHandler((data) => {
+                        this.allData = data;
+                    }).fetchData();
+                },
+
+                saveReport() {
+                    if(!this.form.detail) return this.showToast('Detail pekerjaan kosong!', 'error');
+                    this.loading = true;
+                    google.script.run.withSuccessHandler((res) => {
+                        this.loading = false;
+                        this.showToast(res.message, 'success');
+                        this.form.detail = '';
+                        this.refreshData();
+                    }).saveReport(this.form);
+                },
+
+                updateStatus(id, newStatus) {
+                    google.script.run.withSuccessHandler((res) => {
+                        this.showToast(res, 'success');
+                        this.refreshData();
+                    }).updateStatusOnly(id, newStatus);
+                },
+
+                approve(id, status, catatan) {
+                    google.script.run.withSuccessHandler((res) => {
+                        this.showToast(res.message, 'success');
+                        this.refreshData();
+                    }).updateApproval(id, status, catatan || "-");
+                },
+
+                getBadge(status) {
+                    if(status === 'Done') return 'badge-success';
+                    if(status === 'In Progress') return 'badge-warning';
+                    return 'badge-error';
+                },
+
+                showToast(msg, type) {
+                    this.toast = { show: true, msg, type };
+                    setTimeout(() => this.toast.show = false, 3000);
+                },
+
+                get filteredDash() {
+                    if(this.filterStatus === 'All') return this.allData.slice(0, 10);
+                    return this.allData.filter(i => i.Status === this.filterStatus);
+                },
+
+                get filteredHistory() {
+                    if(!this.historyFilter) return this.allData;
+                    return this.allData.filter(i => i.Tanggal === this.historyFilter);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
